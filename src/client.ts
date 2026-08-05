@@ -20,7 +20,7 @@ import type {
  *
  * @example
  * ```ts
- * import { EvaClient } from '@eva-email/sdk';
+ * import { EvaClient } from '@verifications-email/sdk';
  *
  * const eva = new EvaClient({ apiKey: 'eva_...' });
  * const { data, rateLimit } = await eva.verify('user@example.com');

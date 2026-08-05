@@ -1,5 +1,5 @@
 {
-  "name": "@eva-email/sdk",
+  "name": "@verifications-email/sdk",
   "version": "0.1.0",
   "description": "Official JavaScript/TypeScript SDK for the EVA Email Verification API",
   "license": "MIT",

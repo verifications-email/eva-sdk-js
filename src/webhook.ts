@@ -51,7 +51,7 @@ export async function verifyWebhookSignature(
  *
  * @example
  * ```ts
- * import { parseWebhookEvent, BulkJobCompletedEvent } from '@eva-email/sdk';
+ * import { parseWebhookEvent, BulkJobCompletedEvent } from '@verifications-email/sdk';
  *
  * const event = await parseWebhookEvent<BulkJobCompletedEvent>({
  *   payload: req.body,

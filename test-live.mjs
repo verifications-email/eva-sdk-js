@@ -1,5 +1,5 @@
 /**
- * Live integration test for @eva-email/sdk
+ * Live integration test for @verifications-email/sdk
  * Uses the test API key from project config.
  * Run: node test-live.mjs
  */

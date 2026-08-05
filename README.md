@@ -1,4 +1,4 @@
-# @eva-email/sdk
+# @verifications-email/sdk
 
 Official JavaScript/TypeScript SDK for the **EVA Email Verification API**.
 
@@ -7,13 +7,13 @@ Zero dependencies. Works with Node.js 18+, Deno, Bun, and modern browsers.
 ## Installation
 
 ```bash
-npm install @eva-email/sdk
+npm install @verifications-email/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { EvaClient } from '@eva-email/sdk';
+import { EvaClient } from '@verifications-email/sdk';
 
 const eva = new EvaClient({ apiKey: 'eva_...' });
 
@@ -148,8 +148,8 @@ const { data: job } = await eva.getBulkJob('job-id-123');
 Verify incoming webhook signatures without instantiating the client:
 
 ```typescript
-import { verifyWebhookSignature, parseWebhookEvent } from '@eva-email/sdk';
-import type { BulkJobCompletedEvent } from '@eva-email/sdk';
+import { verifyWebhookSignature, parseWebhookEvent } from '@verifications-email/sdk';
+import type { BulkJobCompletedEvent } from '@verifications-email/sdk';
 
 // Option 1: Verify only
 const isValid = await verifyWebhookSignature({
@@ -173,8 +173,8 @@ console.log(event.summary); // { safe: 800, risky: 150, invalid: 50 }
 
 ```typescript
 import express from 'express';
-import { parseWebhookEvent } from '@eva-email/sdk';
-import type { BulkJobCompletedEvent } from '@eva-email/sdk';
+import { parseWebhookEvent } from '@verifications-email/sdk';
+import type { BulkJobCompletedEvent } from '@verifications-email/sdk';
 
 const app = express();
 
@@ -207,7 +207,7 @@ import {
   QuotaExceededError,
   AuthenticationError,
   NotFoundError,
-} from '@eva-email/sdk';
+} from '@verifications-email/sdk';
 
 const eva = new EvaClient({ apiKey: 'eva_...' });
 
