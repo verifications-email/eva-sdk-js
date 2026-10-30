@@ -36,6 +36,7 @@ export {
   EvaError,
   RateLimitError,
   QuotaExceededError,
+  DailyLimitError,
   AuthenticationError,
   NotFoundError,
   WebhookSignatureError,

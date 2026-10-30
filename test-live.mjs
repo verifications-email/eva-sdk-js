@@ -39,7 +39,7 @@ try {
   const { data, rateLimit } = await eva.verify('test@gmail.com');
   assert(typeof data.email === 'string', 'email is string');
   assert(typeof data.score === 'number', 'score is number');
-  assert(['safe', 'risky', 'invalid'].includes(data.risk), `risk is valid enum: "${data.risk}"`);
+  assert(['safe', 'risky', 'catchall', 'invalid', 'unknown'].includes(data.risk), `risk is valid enum: "${data.risk}"`);
   assert(['deliverable', 'undeliverable', 'risky', 'unknown'].includes(data.smtp_check), `smtp_check is valid: "${data.smtp_check}"`);
   assert(typeof data.syntax_valid === 'boolean', 'syntax_valid is boolean');
   assert(typeof data.mx_found === 'boolean', 'mx_found is boolean');
@@ -85,8 +85,24 @@ try {
   failed++;
 }
 
-// ── Test 4: Batch verification ─────────────────────────────────
-console.log('\n[Test 4] Batch verification (POST /api/v1/verify/batch)');
+// ── Test 4: Catch-all verdict is first-class ───────────────────
+console.log('\n[Test 4] Catch-all verdict (random local part @google.com)');
+try {
+  const token = 'zz' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const { data } = await eva.verify(`${token}@google.com`);
+  assert(data.is_catch_all === true, `is_catch_all true: ${data.is_catch_all}`);
+  assert(data.risk === 'catchall', `risk is "catchall": "${data.risk}"`);
+  assert(data.reason === 'catch_all', `reason is "catch_all": "${data.reason}"`);
+  assert(data.score >= 40 && data.score <= 69, `score in the 40-69 band: ${data.score}`);
+  assert(!('catch_all_confidence' in data), 'catch_all_confidence is not emitted');
+  console.log(`  Score: ${data.score}, Risk: ${data.risk}, Reason: ${data.reason}`);
+} catch (err) {
+  console.log(`  ERROR: ${err.message}`);
+  failed++;
+}
+
+// ── Test 5: Batch verification ─────────────────────────────────
+console.log('\n[Test 5] Batch verification (POST /api/v1/verify/batch)');
 try {
   const { data } = await eva.verifyBatch([
     'test@gmail.com',
@@ -104,8 +120,8 @@ try {
   failed++;
 }
 
-// ── Test 5: Client-side batch validation ───────────────────────
-console.log('\n[Test 5] Client-side batch limit validation');
+// ── Test 6: Client-side batch validation ───────────────────────
+console.log('\n[Test 6] Client-side batch limit validation');
 try {
   await eva.verifyBatch([]);
   console.log('  FAIL: Should have thrown for empty array');
@@ -125,8 +141,8 @@ try {
   assert(err.code === 'INVALID_INPUT', `code is INVALID_INPUT: "${err.code}"`);
 }
 
-// ── Test 6: Domain deliverability ──────────────────────────────
-console.log('\n[Test 6] Domain deliverability (GET /api/v1/domain/:domain/deliverability)');
+// ── Test 7: Domain deliverability ──────────────────────────────
+console.log('\n[Test 7] Domain deliverability (GET /api/v1/domain/:domain/deliverability)');
 try {
   const { data } = await eva.getDomainDeliverability('gmail.com');
   assert(data.domain === 'gmail.com', `domain is gmail.com: "${data.domain}"`);
@@ -140,8 +156,8 @@ try {
   failed++;
 }
 
-// ── Test 7: Invalid API key ────────────────────────────────────
-console.log('\n[Test 7] Authentication error with invalid API key');
+// ── Test 8: Invalid API key ────────────────────────────────────
+console.log('\n[Test 8] Authentication error with invalid API key');
 try {
   const badClient = new EvaClient({
     apiKey: 'eva_invalid_key_here',
@@ -157,8 +173,8 @@ try {
   assert(err.code === 'UNAUTHORIZED', `code is UNAUTHORIZED: "${err.code}"`);
 }
 
-// ── Test 8: List bulk jobs ─────────────────────────────────────
-console.log('\n[Test 8] List bulk jobs (GET /api/v1/verify/async)');
+// ── Test 9: List bulk jobs ─────────────────────────────────────
+console.log('\n[Test 9] List bulk jobs (GET /api/v1/verify/async)');
 try {
   const { data } = await eva.listBulkJobs();
   assert(Array.isArray(data), 'returns array');
@@ -169,8 +185,8 @@ try {
   failed++;
 }
 
-// ── Test 9: Get non-existent bulk job ──────────────────────────
-console.log('\n[Test 9] Get non-existent bulk job (404)');
+// ── Test 10: Get non-existent bulk job ─────────────────────────
+console.log('\n[Test 10] Get non-existent bulk job (404)');
 try {
   await eva.getBulkJob('00000000-0000-0000-0000-000000000000');
   console.log('  FAIL: Should have thrown NotFoundError');

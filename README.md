@@ -33,7 +33,7 @@ console.log(rateLimit.remaining); // 199
 - Async bulk file upload (CSV/XLSX) with polling
 - Domain deliverability reports (SPF/DKIM/DMARC/blacklists)
 - Webhook signature verification (HMAC-SHA256)
-- Auto-retry with exponential backoff on 429/5xx
+- Auto-retry with exponential backoff on 429/5xx (a used-up daily or monthly allowance is not retried)
 - Rate limit info on every response
 - Full TypeScript types
 
@@ -45,7 +45,7 @@ console.log(rateLimit.remaining); // 199
 const eva = new EvaClient({
   apiKey: 'eva_...',           // Required
   baseUrl: 'https://...',     // Default: 'https://verifications.email'
-  timeout: 30_000,            // Request timeout in ms (default: 30s)
+  timeout: 100_000,           // Request timeout in ms (default: 100s)
   maxRetries: 3,              // Retries on 429/5xx (default: 3)
   retryDelay: 1000,           // Base retry delay in ms (default: 1s)
 });
@@ -58,7 +58,7 @@ const { data } = await eva.verify('user@gmail.com');
 
 console.log(data.email);                  // "user@gmail.com"
 console.log(data.score);                  // 0-100
-console.log(data.risk);                   // "safe" | "risky" | "invalid"
+console.log(data.risk);                   // "safe" | "risky" | "catchall" | "invalid" | "unknown"
 console.log(data.smtp_check);             // "deliverable" | "undeliverable" | "risky" | "unknown"
 console.log(data.is_disposable);          // false
 console.log(data.is_role_account);        // false
@@ -166,7 +166,7 @@ const event = await parseWebhookEvent<BulkJobCompletedEvent>({
 });
 
 console.log(event.job_id);
-console.log(event.summary); // { safe: 800, risky: 150, invalid: 50 }
+console.log(event.summary); // { safe: 800, risky: 100, catchall: 50, invalid: 50, unknown: 12 }
 ```
 
 ### Express.js Example
@@ -221,6 +221,10 @@ try {
   } else if (err instanceof QuotaExceededError) {
     // Monthly quota exhausted, no PAYG credits left
     console.log('Quota exceeded. Purchase credit packs to continue.');
+  } else if (err instanceof EvaError && err.code === 'PAID_PLAN_REQUIRED') {
+    // Free account without credits: API access needs a plan or a credit
+    // pack. Its 300 free checks run in the dashboard.
+    console.log('Pick a plan or a credit pack to use the API.');
   } else if (err instanceof AuthenticationError) {
     // Invalid or missing API key
     console.log('Check your API key');
@@ -253,8 +257,8 @@ console.log(rateLimit.creditsRemaining);  // null or number (PAYG credits)
 |--------|------|---------|-------------|
 | `apiKey` | `string` | — | **Required.** Your EVA API key. |
 | `baseUrl` | `string` | `https://verifications.email` | API base URL. |
-| `timeout` | `number` | `30000` | Request timeout (ms). |
-| `maxRetries` | `number` | `3` | Max retries on 429/5xx errors. |
+| `timeout` | `number` | `100000` | Request timeout (ms). A check can take up to 90 s when the mail server holds its reply. |
+| `maxRetries` | `number` | `3` | Max retries on 429/5xx errors. `DAILY_LIMIT` and `QUOTA_EXCEEDED` are never retried, and no single wait is longer than 60 s. |
 | `retryDelay` | `number` | `1000` | Base delay (ms) for exponential backoff. |
 | `fetch` | `function` | `globalThis.fetch` | Custom fetch implementation. |
 
@@ -266,6 +270,19 @@ console.log(rateLimit.creditsRemaining);  // null or number (PAYG credits)
 | Deno | >= 1.28 | Full support |
 | Bun | >= 1.0 | Full support |
 | Browsers | Modern | Chrome 63+, Firefox 57+, Safari 11.1+ |
+
+## Changes
+
+### Unreleased
+
+- A 429 with `DAILY_LIMIT` or `QUOTA_EXCEEDED` is no longer retried: it throws `DailyLimitError` or `QuotaExceededError` at once instead of waiting out a `Retry-After` that can be most of a day. `RATE_LIMITED` is still retried, with each wait capped at 60 s.
+- Added `DAILY_LIMIT` to `ErrorCode`.
+- Added `PAID_PLAN_REQUIRED` to `ErrorCode`. A Free account without credits gets 403 `PAID_PLAN_REQUIRED` from every API call, thrown at once as `EvaError` with that code; any plan or credit pack lifts it.
+
+### 0.3.0
+
+- Removed `yahoo_api_verified`, `yahoo_api_error`, `entra_gct_verified` and `entra_gct_error` from `VerificationResult`. They were undocumented diagnostics that never changed a verdict; the score and `reason` already carry what they said. Existing clients that read them get `undefined`.
+- Added `is_locked` to `VerificationResult` and `BulkJobResult`: the provider reported the account locked (temporary or permanent lockout).
 
 ## License
 

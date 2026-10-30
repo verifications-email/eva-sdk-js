@@ -1,6 +1,6 @@
 {
   "name": "@verifications-email/sdk",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Official JavaScript/TypeScript SDK for the EVA Email Verification API",
   "license": "MIT",
   "type": "module",
@@ -32,6 +32,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
+    "test": "node --import ./test/resolve-ts.mjs --test test/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

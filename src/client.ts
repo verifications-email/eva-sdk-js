@@ -40,7 +40,7 @@ export class EvaClient {
         /\/$/,
         '',
       ),
-      timeout: options.timeout ?? 30_000,
+      timeout: options.timeout ?? 100_000,
       maxRetries: options.maxRetries ?? 3,
       retryDelay: options.retryDelay ?? 1000,
       fetch: options.fetch ?? globalThis.fetch.bind(globalThis),

@@ -5,7 +5,7 @@ export interface EvaClientOptions {
   apiKey: string;
   /** Base URL of the EVA API. Default: `https://verifications.email` */
   baseUrl?: string;
-  /** Request timeout in milliseconds. Default: `30000` */
+  /** Request timeout in milliseconds. Default: `100000`: a mail server that holds its reply can make a check take up to 90 s. */
   timeout?: number;
   /** Max automatic retries on 429/5xx. Default: `3` */
   maxRetries?: number;
@@ -58,7 +58,7 @@ export interface RateLimitInfo {
 
 // ─── Verification ──────────────────────────────────────────────
 
-export type Risk = 'safe' | 'risky' | 'invalid';
+export type Risk = 'safe' | 'risky' | 'catchall' | 'invalid' | 'unknown';
 export type SmtpCheck = 'deliverable' | 'undeliverable' | 'risky' | 'unknown';
 export type SpamTrapRisk = 'low' | 'medium' | 'high';
 
@@ -67,14 +67,14 @@ export interface VerificationResult {
   /** Composite deliverability score (0–100). */
   score: number;
   risk: Risk;
+  /** Why the verdict landed where it did (e.g. "catch_all", "no_mx", "greylisted"); absent for a plain deliverable. */
+  reason?: string;
   syntax_valid: boolean;
   mx_found: boolean;
   smtp_check: SmtpCheck;
   is_disposable: boolean;
   is_role_account: boolean;
   is_catch_all: boolean;
-  /** Catch-all confidence (0–100) when is_catch_all is true, otherwise null. */
-  catch_all_confidence: number | null;
   is_free_provider: boolean;
   spam_trap_risk: SpamTrapRisk;
   /** Suggested domain correction (e.g. "gmail.com" for "gmial.com"), or null. */
@@ -88,6 +88,8 @@ export interface VerificationResult {
   /** Detected SMTP provider (e.g. "Gmail", "Microsoft 365"). */
   smtp_provider?: string | null;
   is_disabled?: boolean;
+  /** The provider reported the account locked (temporary or permanent lockout). */
+  is_locked?: boolean;
   is_full_inbox?: boolean;
   is_tarpitted?: boolean;
   /** SMTP response time in milliseconds. */
@@ -98,12 +100,6 @@ export interface VerificationResult {
   /** Double Bounce Email Box detection. */
   is_dbeb?: boolean;
   is_accept_all?: boolean;
-  /** Yahoo API verification was used. */
-  yahoo_api_verified?: boolean;
-  yahoo_api_error?: string | null;
-  /** Microsoft Entra GetCredentialType verification was used. */
-  entra_gct_verified?: boolean;
-  entra_gct_error?: string | null;
 }
 
 // ─── Batch ─────────────────────────────────────────────────────
@@ -142,6 +138,8 @@ export interface BulkJobResult {
   spam_trap_risk: SpamTrapRisk;
   domain_reputation_score: number | null;
   suggested_correction: string | null;
+  /** The provider reported the account locked (temporary or permanent lockout). Absent on jobs that finished before Oct 14 2026. */
+  is_locked?: boolean;
 }
 
 export interface BulkUploadOptions {
@@ -220,7 +218,9 @@ export interface DomainDeliverability {
 export interface WebhookSummary {
   safe: number;
   risky: number;
+  catchall: number;
   invalid: number;
+  unknown: number;
 }
 
 export interface BulkJobCompletedEvent {
@@ -249,7 +249,9 @@ export type ErrorCode =
   | 'INVALID_INPUT'
   | 'UNAUTHORIZED'
   | 'FORBIDDEN'
+  | 'PAID_PLAN_REQUIRED'
   | 'RATE_LIMITED'
   | 'QUOTA_EXCEEDED'
+  | 'DAILY_LIMIT'
   | 'NOT_FOUND'
   | 'INTERNAL_ERROR';

@@ -52,6 +52,35 @@ export class QuotaExceededError extends EvaError {
   }
 }
 
+/**
+ * Thrown when a Free plan account without credits has used its checks for
+ * the day (429 DAILY_LIMIT). It is never retried: the limit resets at
+ * 00:00 UTC, `retryAfter` seconds from the response, and any plan or credit
+ * pack removes it.
+ *
+ * `limit` and `remaining` come from `X-Daily-Limit` and `X-Daily-Remaining`.
+ * `remaining` is above 0 when a batch was larger than what is left today:
+ * a batch of at most `remaining` addresses still goes through.
+ */
+export class DailyLimitError extends EvaError {
+  readonly retryAfter: number | null;
+  readonly limit: number | null;
+  readonly remaining: number | null;
+
+  constructor(
+    message: string,
+    rateLimit: RateLimitInfo,
+    limit: number | null,
+    remaining: number | null,
+  ) {
+    super(message, 'DAILY_LIMIT', 429, rateLimit);
+    this.name = 'DailyLimitError';
+    this.retryAfter = rateLimit.retryAfter;
+    this.limit = limit;
+    this.remaining = remaining;
+  }
+}
+
 /** Thrown when the API key is missing or invalid (401). */
 export class AuthenticationError extends EvaError {
   constructor(message: string = 'Invalid or missing API key') {
