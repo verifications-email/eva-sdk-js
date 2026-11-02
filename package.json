@@ -1,6 +1,6 @@
 {
   "name": "@verifications-email/sdk",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Official JavaScript/TypeScript SDK for the EVA Email Verification API",
   "license": "MIT",
   "type": "module",
