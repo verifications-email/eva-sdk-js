@@ -17,11 +17,10 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      # npm stage ships in npm 12, which needs Node 24.15+
+      # Trusted publishing needs npm 11.5.1+; npm 12 also keeps `npm stage` on hand
       - run: npm install -g npm@12
       - run: npm install
       - run: npm run build
       # No token: npm signs in with the trusted publisher set up on npmjs.com,
-      # which only allows staging. A maintainer approves the staged version
-      # under Staged Packages on npmjs.com (or `npm stage approve <id>`), with 2FA.
-      - run: npm stage publish --provenance --access public
+      # which must allow direct `npm publish` (not only staging).
+      - run: npm publish --provenance --access public
