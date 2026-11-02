@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-02
+
+### Changed
+
+- Releases are published from GitHub Actions with npm trusted publishing (OIDC) and carry
+  provenance. The package code is the same as 0.4.0.
+
 ## [0.4.0] - 2026-10-30
 
 ### Added
